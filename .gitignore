@@ -1,0 +1,21 @@
+# Standard ignores
+*.pyc
+*.pyo
+*.DS_Store
+*.swp
+*.idea
+*.project
+*.pydevproject
+*.kpf
+venv
+
+# Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm
+
+## Directory-based project format
+.idea/
+
+## File-based project format
+*.ipr
+*.iml
+*.iws
+
