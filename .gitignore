@@ -13,6 +13,7 @@ venv
 
 ## Directory-based project format
 .idea/
+tcml1handson/
 
 ## File-based project format
 *.ipr
