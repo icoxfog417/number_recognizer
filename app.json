@@ -1,0 +1,9 @@
+{
+    "name": "Number Recognizer",
+    "description": "handwritten number recognizer by scikit-learn",
+    "repository": "https://github.com/icoxfog417/number_recognizer",
+    "keywords": ["Python", "tornado", "scikit-learn"],
+    "env": {
+        "BUILDPACK_URL": "https://github.com/kennethreitz/conda-buildpack"
+    }
+}
