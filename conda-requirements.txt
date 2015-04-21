@@ -12,4 +12,3 @@ python=3.4.3=0
 scikit-learn=0.16.1=np19py34_0
 scipy=0.15.1=np19py34_0
 setuptools=15.0=py34_0
-tornado=4.1=py34_0
