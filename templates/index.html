@@ -21,6 +21,8 @@
     .result .answer {
         font-size: 100px;
         width: 120px;
+        height: 120px;
+        text-align: center;
         float:left;
     }
 </style>
@@ -51,13 +53,47 @@
             return d.promise();
         };
 
+        Prediction.prototype.feedback = function (value) {
+            var self = this;
+            var d = new $.Deferred;
+            var feedback = [parseInt(value)];
+            feedback = feedback.concat(self.sampleData);
+            $.post("/feedback", JSON.stringify({data: feedback}), function(feedbacked){
+                if(feedbacked["result"] == ""){
+                    self.result = feedback[0];
+                    d.resolve();
+                }else{
+                    d.reject(feedbacked["result"]);
+                }
+            })
+            return d.promise();
+        };
+
         return Prediction;
     })();
 
-    var Predicts = [];
-
     Vue.config.delimiters = ["[[", "]]"];
     Vue.config.prefix =  "data-v-";
+    Vue.component("predict-item", {
+        template: "#predict-item",
+        methods: {
+            beginEdit: function(){
+                this.state.editing = true;
+            },
+            endEdit: function(){
+                var state = this.state;
+                if(state.value >= 0 && state.value < 10 && (state.value != this.result)){
+                    var original = this.result;
+                    this.$data.feedback(state.value).fail(function(msg){
+                        state.value = original;
+                    })
+                }else{
+                    state.value = this.result;
+                }
+                state.editing = false;
+            }
+        }
+    });
     var app = new Vue({
         el: "#main",
         data: {
@@ -74,20 +110,43 @@
             clear: function(){
                 this.canvas.clear();
             },
+            injectState: function(p){
+                p.state =  {
+                    editing: false,
+                    value: p.result
+                }
+            },
             submit: function(){
                 var self = this;
                 var image = self.canvas.snapShot();
                 var sample = self.canvas.toSample(self.SAMPLE_SIZE, self.SAMPLE_SIZE);
                 var p = new Prediction(image, sample);
-
                 p.execute().done(function(p){
+                    self.injectState(p);
                     self.predicts.push(p);
                     self.clear();
                 })
             }
         }
     });
+
+
 </script>
+<script id="predict-item" type="x-template">
+    <div class="result">
+        <div style="float:left">
+            <img data-v-attr="src: $data.imageSrc()"/>
+        </div>
+        <div style="width:20px;float:left;font-size:20px">
+            <i class="fa fa-arrow-right"></i>
+        </div>
+        <div data-v-text="$data.state.value" data-v-show="!$data.state.editing" data-v-on="click: beginEdit" class="answer">
+        </div>
+        <input data-v-model="$data.state.value" data-v-show="$data.state.editing" data-v-on="keyup:endEdit | key enter" type="number" name="result" class="answer">
+        <br style="clear:both">
+    </div>
+</script>
+
 {% end%}
 
 
@@ -109,16 +168,7 @@
             </div>
         </div>
         <div class="xlarge-80 large-80 medium-80 small-100 tiny-100">
-            <div data-v-repeat="p: predicts" class="result">
-                <div style="float:left">
-                    <img data-v-attr="src: p.imageSrc()"/>
-                </div>
-                <div style="width:20px;float:left;font-size:20px">
-                    <i class="fa fa-arrow-right"></i>
-                </div>
-                <div data-v-text="p.result" class="answer">
-                </div>
-                <br style="clear:both">
+            <div data-v-repeat="predicts" data-v-component="predict-item" >
             </div>
             <br style="clear:both"/>
         </div>

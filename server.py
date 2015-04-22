@@ -29,12 +29,38 @@ class PredictionHandler(tornado.web.RequestHandler):
         self.write(resp)
 
 
+class FeedbackHandler(tornado.web.RequestHandler):
+    def post(self):
+        arguments = tornado.escape.json_decode(self.request.body)
+        data = arguments["data"]
+        result = ""
+
+        is_valid = (len(data) == 65)  # target(1) + data(64)
+        if is_valid:
+            try:
+                [float(d) for d in data]
+            except Exception as ex:
+                is_valid = False
+
+            if not (0 <= data[0] < 10):
+                is_valid = False
+
+        if is_valid:
+            MachineLoader.feedback(machines.number_recognizer, data)
+        else:
+            result = "feedback format is wrong."
+
+        resp = {"result": result}
+        self.write(resp)
+
+
 class Application(tornado.web.Application):
 
     def __init__(self):
         handlers = [
             (r"/", IndexHandler),
             (r"/predict", PredictionHandler),
+            (r"/feedback", FeedbackHandler),
         ]
 
         settings = dict(
