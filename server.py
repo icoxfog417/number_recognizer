@@ -1,5 +1,4 @@
 import os
-import json
 import tornado.web
 import tornado.ioloop
 import tornado.httpserver
@@ -7,6 +6,7 @@ import tornado.escape
 from tornado.options import define, options
 from machines.machine_loader import MachineLoader
 import machines.number_recognizer
+from machines.number_recognizer.validator import Validator
 
 
 # Define command line arguments
@@ -18,35 +18,35 @@ class IndexHandler(tornado.web.RequestHandler):
         self.render("index.html", title="title")
 
 
-class PredictionHandler(tornado.web.RequestHandler):
+class BaseHandler(tornado.web.RequestHandler):
+    MACHINE_SESSION_KEY = "number_recognizer"
+
+
+class PredictionHandler(BaseHandler):
+
     def post(self):
-        arguments = tornado.escape.json_decode(self.request.body)
-        data = arguments["data"]
+        resp = {"result": str(-1)}
+        data = self.get_arguments("data[]")
         # print(data)
+
+        validated = Validator.validate_data(data)
         machine = MachineLoader.load(machines.number_recognizer)
-        predicted = machine.predict(data)
-        resp = {"result": str(predicted[0])}
+        if len(validated) > 0:
+            predicted = machine.predict(validated)
+            resp["result"] = str(predicted[0])
+
         self.write(resp)
 
 
-class FeedbackHandler(tornado.web.RequestHandler):
+class FeedbackHandler(BaseHandler):
+
     def post(self):
-        arguments = tornado.escape.json_decode(self.request.body)
-        data = arguments["data"]
+        data = self.get_arguments("data[]")
         result = ""
 
-        is_valid = (len(data) == 65)  # target(1) + data(64)
-        if is_valid:
-            try:
-                [float(d) for d in data]
-            except Exception as ex:
-                is_valid = False
-
-            if not (0 <= data[0] < 10):
-                is_valid = False
-
-        if is_valid:
-            MachineLoader.feedback(machines.number_recognizer, data)
+        feedback = Validator.validate_feedback(data)
+        if len(feedback) > 0:
+            MachineLoader.feedback(machines.number_recognizer, feedback)
         else:
             result = "feedback format is wrong."
 
@@ -66,6 +66,8 @@ class Application(tornado.web.Application):
         settings = dict(
             template_path=os.path.join(os.path.dirname(__file__), "templates"),
             static_path=os.path.join(os.path.dirname(__file__), "static"),
+            cookie_secret="__TODO:_GENERATE_YOUR_OWN_RANDOM_VALUE_HERE__",
+            xsrf_cookies=True,
             debug=True,
         )
 

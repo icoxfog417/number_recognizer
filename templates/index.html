@@ -31,6 +31,18 @@
 {% block bottom %}
 
 <script type="text/javascript">
+    function packData(data) {
+        var getCookie = function(name){
+            var r = document.cookie.match("\\b" + name + "=([^;]*)\\b");
+            return r ? r[1] : undefined;
+        }
+        var packed = {
+            _xsrf: getCookie("_xsrf"),
+            "data[]": data
+        }
+        return packed;
+    }
+
     var Prediction = (function () {
         function Prediction(image, sample) {
             this.image = image;
@@ -46,7 +58,7 @@
         Prediction.prototype.execute = function () {
             var self = this;
             var d = new $.Deferred;
-            $.post("/predict", JSON.stringify({data: self.sampleData}), function(prediction){
+            $.post("/predict", packData(self.sampleData), function(prediction){
                 self.result = prediction["result"];
                 d.resolve(self)
             })
@@ -58,7 +70,7 @@
             var d = new $.Deferred;
             var feedback = [parseInt(value)];
             feedback = feedback.concat(self.sampleData);
-            $.post("/feedback", JSON.stringify({data: feedback}), function(feedbacked){
+            $.post("/feedback", packData(feedback), function(feedbacked){
                 if(feedbacked["result"] == ""){
                     self.result = feedback[0];
                     d.resolve();
@@ -123,7 +135,7 @@
                 var p = new Prediction(image, sample);
                 p.execute().done(function(p){
                     self.injectState(p);
-                    self.predicts.push(p);
+                    self.predicts.unshift(p);
                     self.clear();
                 })
             }
@@ -174,4 +186,5 @@
         </div>
     </div>
 </div>
+{% module xsrf_form_html() %}
 {% end %}
