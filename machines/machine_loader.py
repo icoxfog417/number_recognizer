@@ -21,7 +21,7 @@ class MachineLoader():
 
     @classmethod
     def feedback(cls, pkg, feedback, separator="\t", encoding="utf-8"):
-        feedback_file = os.path.join(cls.DATA_FOLDER, cls.FEEDBACK_FILE_FORMAT.format(pkg.__name__.split(".")))
+        feedback_file = os.path.join(cls.DATA_FOLDER, cls.FEEDBACK_FILE_FORMAT.format("_".join(pkg.__name__.split("."))))
         with open(feedback_file, "ab+") as outfile:
             line = separator.join([str(e) for e in feedback])
             outfile.write((line + os.linesep).encode(encoding))
